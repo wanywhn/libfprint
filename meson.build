@@ -134,6 +134,7 @@ default_drivers = [
 
     # SPI
     'elanspi',
+    'goodix'
 ]
 
 # FIXME: All the drivers should be fixed by adjusting the byte order.
