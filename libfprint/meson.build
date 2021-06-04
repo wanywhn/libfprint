@@ -222,7 +222,9 @@ deps = [
     gobject_dep,
     gusb_dep,
     mathlib_dep,
-] + optional_deps
+    nss_dep,
+    openssl_dep,
+]
 
 # These are empty and only exist so that the include directories are created
 # in the build tree. This silences a build time warning.
