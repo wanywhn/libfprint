@@ -89,6 +89,7 @@ gio_dep = dependency('gio-unix-2.0', version: '>=' + glib_min_version)
 gobject_dep = dependency('gobject-2.0', version: '>=' + glib_min_version)
 gusb_dep = dependency('gusb', version: '>= 0.2.0')
 mathlib_dep = cc.find_library('m', required: false)
+openssl_dep = dependency('', required: false)
 
 # The following dependencies are only used for tests
 cairo_dep = dependency('cairo', required: false)
@@ -131,10 +132,9 @@ default_drivers = [
     'goodixmoc',
     'nb1010',
     'fpcmoc',
-
     # SPI
     'elanspi',
-    'goodix'
+    'goodixtls'
 ]
 
 # FIXME: All the drivers should be fixed by adjusting the byte order.
@@ -224,8 +224,19 @@ foreach i : driver_helpers
         if not nss_dep.found()
             error('nss is required for @0@ and possibly others'.format(driver))
         endif
-
         optional_deps += nss_dep
+    endif
+    if driver == 'goodixtls'
+        openssl_dep = dependency('openssl', required: false)
+        if not openssl_dep.found()
+            error('OpenSSL is required for the Goodix TLS driver')
+        endif
+    endif
+	if udev_drivers.contains(driver)
+		gudev_dep = dependency('gudev-1.0', required: false)
+		if not gudev_dep.found()
+			error('udev is required for SPI support')
+		endif
     elif i == 'udev'
         install_udev_rules = true
 
