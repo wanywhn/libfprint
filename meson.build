@@ -90,6 +90,7 @@ gobject_dep = dependency('gobject-2.0', version: '>=' + glib_min_version)
 gusb_dep = dependency('gusb', version: '>= 0.2.0')
 mathlib_dep = cc.find_library('m', required: false)
 openssl_dep = dependency('', required: false)
+threads_dep = dependency('', required: false)
 
 # The following dependencies are only used for tests
 cairo_dep = dependency('cairo', required: false)
@@ -230,6 +231,10 @@ foreach i : driver_helpers
         openssl_dep = dependency('openssl', required: false)
         if not openssl_dep.found()
             error('OpenSSL is required for the Goodix TLS driver')
+        endif
+        threads_dep = dependency('threads', required: false)
+        if not threads_dep.found()
+            error('Threads is required for the Goodix TLS driver')
         endif
     endif
 	if udev_drivers.contains(driver)
