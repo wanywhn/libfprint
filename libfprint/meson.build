@@ -161,10 +161,109 @@ helper_sources = {
 drivers_sources = []
 drivers_cflags = []
 foreach driver: drivers
-    drivers_sources += driver_sources[driver]
-endforeach
-foreach helper : driver_helpers
-    drivers_sources += helper_sources[helper]
+    if driver == 'upekts'
+        drivers_sources += [ 'drivers/upekts.c', 'drivers/upek_proto.c' ]
+    endif
+    if driver == 'upektc'
+        drivers_sources += [ 'drivers/upektc.c' ]
+    endif
+    if driver == 'upeksonly'
+        drivers_sources += [ 'drivers/upeksonly.c' ]
+    endif
+    if driver == 'uru4000'
+        drivers_sources += [ 'drivers/uru4000.c' ]
+    endif
+    if driver == 'aes1610'
+        drivers_sources += [ 'drivers/aes1610.c' ]
+        aeslib = true
+    endif
+    if driver == 'aes1660'
+        drivers_sources += [ 'drivers/aes1660.c' ]
+        aeslib = true
+        aesx660 = true
+    endif
+    if driver == 'aes2501'
+        drivers_sources += [ 'drivers/aes2501.c' ]
+        aeslib = true
+    endif
+    if driver == 'aes2550'
+        drivers_sources += [ 'drivers/aes2550.c' ]
+        aeslib = true
+    endif
+    if driver == 'aes2660'
+        drivers_sources += [ 'drivers/aes2660.c' ]
+        aeslib = true
+        aesx660 = true
+    endif
+    if driver == 'aes3500'
+        drivers_sources += [ 'drivers/aes3500.c' ]
+        aeslib = true
+        aes3k = true
+    endif
+    if driver == 'aes4000'
+        drivers_sources += [ 'drivers/aes4000.c' ]
+        aeslib = true
+        aes3k = true
+    endif
+    if driver == 'vcom5s'
+        drivers_sources += [ 'drivers/vcom5s.c' ]
+    endif
+    if driver == 'vfs101'
+        drivers_sources += [ 'drivers/vfs101.c' ]
+    endif
+    if driver == 'vfs301'
+        drivers_sources += [ 'drivers/vfs301.c', 'drivers/vfs301_proto.c' ]
+    endif
+    if driver == 'vfs5011'
+        drivers_sources += [ 'drivers/vfs5011.c' ]
+    endif
+    if driver == 'vfs7552'
+        drivers_sources += [ 'drivers/vfs7552.c' ]
+    endif
+    if driver == 'upektc_img'
+        drivers_sources += [ 'drivers/upektc_img.c',  'drivers/upek_proto.c' ]
+    endif
+    if driver == 'etes603'
+        drivers_sources += [ 'drivers/etes603.c' ]
+    endif
+    if driver == 'vfs0050'
+        drivers_sources += [ 'drivers/vfs0050.c' ]
+    endif
+    if driver == 'elan'
+        drivers_sources += [ 'drivers/elan.c' ]
+    endif
+    if driver == 'virtual_image'
+        drivers_sources += [ 'drivers/virtual-image.c' ]
+    endif
+    if driver == 'virtual_device'
+        drivers_sources += [ 'drivers/virtual-device.c' ]
+    endif
+    if driver == 'virtual_device_storage'
+        drivers_sources += [ 'drivers/virtual-device-storage.c' ]
+    endif
+    if driver.startswith('virtual_')
+        drivers_sources += [ 'drivers/virtual-device-listener.c' ]
+    endif
+    if driver == 'synaptics'
+    drivers_sources += [
+        'drivers/synaptics/synaptics.c',
+        'drivers/synaptics/bmkt_message.c',
+    ]
+    endif
+    if driver == 'goodixmoc'
+    drivers_sources += [
+        'drivers/goodixmoc/goodix.c',
+        'drivers/goodixmoc/goodix_proto.c',
+    ]
+    endif
+    if driver == 'nb1010'
+    drivers_sources += [
+        'drivers/nb1010.c',
+    ]
+    endif
+    if driver == 'goodixtls'
+    drivers_sources += ['drivers/goodixtls/goodix.c', 'drivers/goodixtls/goodixtls.c']
+    endif
 endforeach
 
 
@@ -224,6 +323,7 @@ deps = [
     mathlib_dep,
     nss_dep,
     openssl_dep,
+    threads_dep,
 ]
 
 # These are empty and only exist so that the include directories are created
