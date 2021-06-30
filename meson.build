@@ -135,7 +135,7 @@ default_drivers = [
     'fpcmoc',
     # SPI
     'elanspi',
-    'goodixtls'
+    'goodixtls511'
 ]
 
 # FIXME: All the drivers should be fixed by adjusting the byte order.
@@ -227,7 +227,7 @@ foreach i : driver_helpers
         endif
         optional_deps += nss_dep
     endif
-    if driver == 'goodixtls'
+    if driver == 'goodixtls511'
         openssl_dep = dependency('openssl', required: false)
         if not openssl_dep.found()
             error('OpenSSL is required for the Goodix TLS driver')
