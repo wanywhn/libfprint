@@ -89,8 +89,6 @@ gio_dep = dependency('gio-unix-2.0', version: '>=' + glib_min_version)
 gobject_dep = dependency('gobject-2.0', version: '>=' + glib_min_version)
 gusb_dep = dependency('gusb', version: '>= 0.2.0')
 mathlib_dep = cc.find_library('m', required: false)
-openssl_dep = dependency('', required: false)
-threads_dep = dependency('', required: false)
 
 # The following dependencies are only used for tests
 cairo_dep = dependency('cairo', required: false)
@@ -133,9 +131,11 @@ default_drivers = [
     'goodixmoc',
     'nb1010',
     'fpcmoc',
+    'goodixtls511',
+    'nb1010',
+
     # SPI
     'elanspi',
-    'goodixtls511'
 ]
 
 # FIXME: All the drivers should be fixed by adjusting the byte order.
@@ -165,6 +165,7 @@ driver_helper_mapping = {
     'aes4000' : [ 'aeslib', 'aes3k' ],
     'uru4000' : [ 'nss' ],
     'elanspi' : [ 'udev' ],
+    'goodixtls511' : [ 'goodixtls' ],
     'virtual_image'          : [ 'virtual' ],
     'virtual_device'         : [ 'virtual' ],
     'virtual_device_storage' : [ 'virtual' ],
@@ -220,6 +221,7 @@ foreach i : driver_helpers
 
         libfprint_conf.set10('HAVE_PIXMAN', true)
         optional_deps += imaging_dep
+<<<<<<< HEAD
     elif i == 'nss'
         nss_dep = dependency('nss', required: false)
         if not nss_dep.found()
@@ -228,20 +230,36 @@ foreach i : driver_helpers
         optional_deps += nss_dep
     endif
     if driver == 'goodixtls511'
+=======
+    elif i == 'goodixtls'
+>>>>>>> ba878ce (Resolved merge errors)
         openssl_dep = dependency('openssl', required: false)
         if not openssl_dep.found()
-            error('OpenSSL is required for the Goodix TLS driver')
+            error('openssl is required for @0@ and possibly others'.format(driver))
         endif
+        optional_deps += openssl_dep
+
         threads_dep = dependency('threads', required: false)
         if not threads_dep.found()
-            error('Threads is required for the Goodix TLS driver')
+            error('threads is required for @0@ and possibly others'.format(driver))
         endif
+<<<<<<< HEAD
     endif
 	if udev_drivers.contains(driver)
 		gudev_dep = dependency('gudev-1.0', required: false)
 		if not gudev_dep.found()
 			error('udev is required for SPI support')
 		endif
+=======
+        optional_deps += threads_dep
+    elif i == 'nss'
+        nss_dep = dependency('nss', required: false)
+        if not nss_dep.found()
+            error('nss is required for @0@ and possibly others'.format(driver))
+        endif
+
+        optional_deps += nss_dep
+>>>>>>> ba878ce (Resolved merge errors)
     elif i == 'udev'
         install_udev_rules = true
 
