@@ -202,9 +202,14 @@ void goodix_send_nop (FpDevice          *dev,
                       GoodixNoneCallback callback,
                       gpointer           user_data);
 
-void goodix_send_mcu_get_image (FpDevice           *dev,
-                                GoodixImageCallback callback,
-                                gpointer            user_data);
+void goodix_send_drv_state(FpDevice *dev, GoodixSuccessCallback callback,
+                     gpointer user_data);
+
+void goodix_send_mcu_get_pov_image(FpDevice *dev, GoodixSuccessCallback callback,
+                     gpointer user_data);
+
+void goodix_send_mcu_get_image(FpDevice *dev, GoodixImageCallback callback,
+                               gpointer user_data);
 
 void goodix_send_mcu_switch_to_fdt_down (FpDevice             *dev,
                                          guint8               *mode,

@@ -132,6 +132,7 @@ default_drivers = [
     'nb1010',
     'fpcmoc',
     'goodixtls511',
+    'goodixtls52xd',
     'nb1010',
 
     # SPI
@@ -166,6 +167,7 @@ driver_helper_mapping = {
     'uru4000' : [ 'nss' ],
     'elanspi' : [ 'udev' ],
     'goodixtls511' : [ 'goodixtls' ],
+    'goodixtls52xd' : [ 'goodixtls' ],
     'virtual_image'          : [ 'virtual' ],
     'virtual_device'         : [ 'virtual' ],
     'virtual_device_storage' : [ 'virtual' ],
