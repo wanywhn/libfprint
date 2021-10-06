@@ -143,8 +143,8 @@ driver_sources = {
         [ 'drivers/fpcmoc/fpc.c' ],
     'goodixtls511' :
         [ 'drivers/goodixtls/goodix511.c' ],
-    'goodixtls52xd' :
-        [ 'drivers/goodixtls/goodix52xd.c' ],
+    'goodixtls55x4' :
+        [ 'drivers/goodixtls/goodix55x4.c' ],
 }
 
 helper_sources = {

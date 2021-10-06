@@ -409,7 +409,7 @@ goodix_receive_pack (FpDevice *dev, guint8 *data, guint32 length)
 
     case GOODIX_FLAGS_TLS_DATA:
         fp_dbg("Got TLS data msg");
-        // GOODIX 52xd: Remove first 9 to get valid TLS content
+        // GOODIX 55x4: Remove first 9 to get valid TLS content
         goodix_receive_done(dev, payload+9, payload_len-9, NULL);
         break;
 
@@ -675,7 +675,8 @@ void goodix_send_mcu_get_pov_image(FpDevice *dev, GoodixSuccessCallback callback
 void goodix_send_mcu_get_image(FpDevice* dev, GoodixImageCallback callback,
                                gpointer user_data)
 {
-    guint8 payload[] = {0x45, 0x03, 0xa7, 0x00, 0xa1, 0x00, 0xa7, 0x00, 0xa3, 0x00};
+    guint8 payload[] = {0x01, 0x00};
+    /*guint8 payload[] = {0x45, 0x03, 0xa7, 0x00, 0xa1, 0x00, 0xa7, 0x00, 0xa3, 0x00};*/
     //guint8 payload[] = {0x81, 0x03, 0x27, 0x01, 0x21, 0x01, 0x27, 0x01, 0x23, 0x01};
     //guint8 payload[] = {0x43, 0x03, 0xa7, 0x00, 0xa1, 0x00, 0xa7, 0x00, 0xa3, 0x00};
     GoodixCallbackInfo* cb_info;
@@ -1189,8 +1190,7 @@ void goodix_send_preset_psk_read(FpDevice *dev, guint32 flags, guint16 length,
                                  GoodixPresetPskReadCallback callback,
                                  gpointer user_data) {
   GoodixPresetPsk payload = {.flags = GUINT32_TO_LE(flags),
-                             .length = GUINT32_TO_LE(length),
-                             .offset = GUINT16_TO_LE(0)};
+                             .length = GUINT32_TO_LE(length)};
   GoodixCallbackInfo *cb_info;
 
   if (callback)

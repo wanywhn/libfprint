@@ -138,9 +138,9 @@ typedef struct __attribute__((__packed__)) _GoodixQueryMcuState
 } GoodixQueryMcuState;
 
 typedef struct __attribute__((__packed__)) _GoodixPresetPsk {
+  guint32 flags;
   guint32 length;
   guint32 offset;
-  guint32 flags;
 } GoodixPresetPsk;
 
 typedef struct __attribute__((__packed__)) _GoodixPresetPskResp {
