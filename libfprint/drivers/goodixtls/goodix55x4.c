@@ -28,6 +28,7 @@
 #include "fpi-ssm.h"
 #include "glibconfig.h"
 #include "gusb/gusb-device.h"
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #define FP_COMPONENT "goodixtls55x4"
@@ -237,54 +238,6 @@ static void check_mcu_pov_image(FpDevice* dev, gboolean success,
     else {
         fpi_ssm_next_state(user_data);
     }
-}
-
-enum otp_write_states {
-    OTP_WRITE_1,
-    OTP_WRITE_2,
-
-    OTP_WRITE_NUM,
-};
-
-static void otp_write_run(FpiSsm* ssm, FpDevice* dev)
-{
-    FpiDeviceGoodixTls55X4* self = FPI_DEVICE_GOODIXTLS55X4(dev);
-    switch (fpi_ssm_get_cur_state(ssm)) {
-    case OTP_WRITE_1:
-        guint8 sensor1[] = {0x0a, 0x02};
-        goodix_send_write_sensor_register(
-        dev, 0x022c, sensor1, check_none,
-        ssm);
-        break;
-    case OTP_WRITE_2:
-        guint8 sensor2[] = {0x0a, 0x03};
-        goodix_send_write_sensor_register(
-            dev, 0x022c, sensor2, check_none,
-            ssm);
-        fpi_ssm_next_state(ssm);
-        break;
-    }
-}
-
-static void read_otp_callback(FpDevice* dev, guint8* data, guint16 len,
-                              gpointer ssm, GError* err)
-{
-    if (err) {
-        fpi_ssm_mark_failed(ssm, err);
-        return;
-    }
-    /*if (len < 64) {
-        fpi_ssm_mark_failed(ssm, g_error_new(FP_DEVICE_ERROR,
-                                             FP_DEVICE_ERROR_DATA_INVALID,
-                                             "OTP is invalid (len: %d)", 64));
-        return;
-    }
-        self->otp = malloc(64);
-    memcpy(self->otp, data, len);*/
-    FpiDeviceGoodixTls55X4* self = FPI_DEVICE_GOODIXTLS55X4(dev);
-
-    FpiSsm* otp_ssm = fpi_ssm_new(dev, otp_write_run, 3);
-    fpi_ssm_start_subsm(ssm, otp_ssm);
 }
 
 static void activate_run_state(FpiSsm* ssm, FpDevice* dev)
