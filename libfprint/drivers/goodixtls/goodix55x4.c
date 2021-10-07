@@ -817,7 +817,7 @@ static void fpi_device_goodixtls55x4_class_init(
   dev_class->scan_type = FP_SCAN_TYPE_PRESS;
 
   // TODO
-  img_dev_class->bz3_threshold = 12*6;
+  img_dev_class->bz3_threshold = 12*4;
   img_dev_class->img_width = GOODIX55X4_WIDTH;
   img_dev_class->img_height = GOODIX55X4_HEIGHT;
 
