@@ -13,9 +13,10 @@ G_BEGIN_DECLS
  * @FPI_PRINT_NBIS: NBIS minutiae comparison
  */
 typedef enum {
-  FPI_PRINT_UNDEFINED = 0,
-  FPI_PRINT_RAW,
-  FPI_PRINT_NBIS,
+    FPI_PRINT_UNDEFINED = 0,
+    FPI_PRINT_RAW,
+    FPI_PRINT_NBIS,
+    FPI_PRINT_SIGFM,
 } FpiPrintType;
 
 /**

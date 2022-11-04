@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include "fpi-print.h"
 #define FP_COMPONENT "image_device"
 #include "fpi-log.h"
 
@@ -276,7 +277,7 @@ fpi_image_device_minutiae_detected (GObject *source_object, GAsyncResult *res, g
   if (!error)
     {
       print = fp_print_new (device);
-      fpi_print_set_type (print, FPI_PRINT_NBIS);
+      fpi_print_set_type(print, priv->algorithm);
       if (!fpi_print_add_from_image (print, image, &error))
         {
           g_clear_object (&print);
@@ -322,8 +323,16 @@ fpi_image_device_minutiae_detected (GObject *source_object, GAsyncResult *res, g
       FpiMatchResult result;
 
       fpi_device_get_verify_data (device, &template);
-      if (print)
-        result = fpi_print_bz3_match (template, print, priv->bz3_threshold, &error);
+      if (print) {
+          if (priv->algorithm == FPI_PRINT_NBIS) {
+              result = fpi_print_bz3_match(template, print, priv->bz3_threshold,
+                                           &error);
+          }
+          else if (priv->algorithm == FPI_PRINT_SIGFM) {
+              result =
+                  fpi_print_sfm_match(template, priv->bz3_threshold, &error);
+          }
+      }
       else
         result = FPI_MATCH_ERROR;
 
