@@ -329,8 +329,8 @@ fpi_image_device_minutiae_detected (GObject *source_object, GAsyncResult *res, g
                                            &error);
           }
           else if (priv->algorithm == FPI_PRINT_SIGFM) {
-              result =
-                  fpi_print_sfm_match(template, priv->bz3_threshold, &error);
+              result = fpi_print_sfm_match(template, print, priv->bz3_threshold,
+                                           &error);
           }
       }
       else
