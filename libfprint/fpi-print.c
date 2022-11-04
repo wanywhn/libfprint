@@ -24,8 +24,8 @@
 #include "fpi-log.h"
 
 #include "fp-print-private.h"
-#include "fpi-device.h"
 #include "fpi-compat.h"
+#include "fpi-device.h"
 
 /**
  * SECTION: fpi-print
@@ -45,14 +45,17 @@
  * prints in @print. Both print objects need to be of type #FPI_PRINT_NBIS
  * for this to work.
  */
-void
-fpi_print_add_print (FpPrint *print, FpPrint *add)
-{
-  g_return_if_fail (print->type == FPI_PRINT_NBIS);
-  g_return_if_fail (add->type == FPI_PRINT_NBIS);
+void fpi_print_add_print(FpPrint *print, FpPrint *add) {
+  g_return_if_fail(print->type == FPI_PRINT_NBIS ||
+                   print->type == FPI_PRINT_SIGFM);
+  g_return_if_fail(add->type == FPI_PRINT_NBIS || add->type == FPI_PRINT_SIGFM);
+  g_return_if_fail(add->type == print->type);
+  g_return_if_fail(add->prints->len > 0);
 
-  g_assert (add->prints->len == 1);
-  g_ptr_array_add (print->prints, g_memdup2 (add->prints->pdata[0], sizeof (struct xyt_struct)));
+  g_assert(add->prints->len == 1);
+  int el_size = print->type == FPI_PRINT_NBIS ? sizeof(struct xyt_struct)
+                                              : sizeof(SfmImgInfo *);
+  g_ptr_array_add(print->prints, g_memdup(add->prints->pdata[0], el_size));
 }
 
 /**
@@ -64,20 +67,18 @@ fpi_print_add_print (FpPrint *print, FpPrint *add)
  * call it after creating a new print, or to initialize the template
  * print passed during enrollment.
  */
-void
-fpi_print_set_type (FpPrint     *print,
-                    FpiPrintType type)
-{
-  g_return_if_fail (FP_IS_PRINT (print));
+void fpi_print_set_type(FpPrint *print, FpiPrintType type) {
+  g_return_if_fail(FP_IS_PRINT(print));
   /* We only allow setting this once! */
-  g_return_if_fail (print->type == FPI_PRINT_UNDEFINED);
+  g_return_if_fail(print->type == FPI_PRINT_UNDEFINED);
 
   print->type = type;
   if (print->type == FPI_PRINT_NBIS || print->type == FPI_PRINT_SIGFM) {
-      g_assert_null (print->prints);
-      print->prints = g_ptr_array_new_with_free_func (g_free);
+    g_assert_null(print->prints);
+    print->prints = g_ptr_array_new_with_free_func(
+        print->type == FPI_PRINT_NBIS ? g_free : sfm_free_info);
   }
-  g_object_notify (G_OBJECT (print), "fpi-type");
+  g_object_notify(G_OBJECT(print), "fpi-type");
 }
 
 /**
@@ -88,53 +89,43 @@ fpi_print_set_type (FpPrint     *print,
  * Drivers must set this to %TRUE for any print that is really a handle
  * for data that is stored on the device itself.
  */
-void
-fpi_print_set_device_stored (FpPrint *print,
-                             gboolean device_stored)
-{
-  g_return_if_fail (FP_IS_PRINT (print));
+void fpi_print_set_device_stored(FpPrint *print, gboolean device_stored) {
+  g_return_if_fail(FP_IS_PRINT(print));
 
   print->device_stored = device_stored;
-  g_object_notify (G_OBJECT (print), "device-stored");
+  g_object_notify(G_OBJECT(print), "device-stored");
 }
 
 /* XXX: This is the old version, but wouldn't it be smarter to instead
  * use the highest quality mintutiae? Possibly just using bz_prune from
  * upstream? */
-static void
-minutiae_to_xyt (struct fp_minutiae *minutiae,
-                 int                 bwidth,
-                 int                 bheight,
-                 struct xyt_struct  *xyt)
-{
+static void minutiae_to_xyt(struct fp_minutiae *minutiae, int bwidth,
+                            int bheight, struct xyt_struct *xyt) {
   int i;
   struct fp_minutia *minutia;
   struct minutiae_struct c[MAX_FILE_MINUTIAE];
 
   /* struct xyt_struct uses arrays of MAX_BOZORTH_MINUTIAE (200) */
-  int nmin = min (minutiae->num, MAX_BOZORTH_MINUTIAE);
+  int nmin = min(minutiae->num, MAX_BOZORTH_MINUTIAE);
 
-  for (i = 0; i < nmin; i++)
-    {
-      minutia = minutiae->list[i];
+  for (i = 0; i < nmin; i++) {
+    minutia = minutiae->list[i];
 
-      lfs2nist_minutia_XYT (&c[i].col[0], &c[i].col[1], &c[i].col[2],
-                            minutia, bwidth, bheight);
-      c[i].col[3] = sround (minutia->reliability * 100.0);
+    lfs2nist_minutia_XYT(&c[i].col[0], &c[i].col[1], &c[i].col[2], minutia,
+                         bwidth, bheight);
+    c[i].col[3] = sround(minutia->reliability * 100.0);
 
-      if (c[i].col[2] > 180)
-        c[i].col[2] -= 360;
-    }
+    if (c[i].col[2] > 180)
+      c[i].col[2] -= 360;
+  }
 
-  qsort ((void *) &c, (size_t) nmin, sizeof (struct minutiae_struct),
-         sort_x_y);
+  qsort((void *)&c, (size_t)nmin, sizeof(struct minutiae_struct), sort_x_y);
 
-  for (i = 0; i < nmin; i++)
-    {
-      xyt->xcol[i]     = c[i].col[0];
-      xyt->ycol[i]     = c[i].col[1];
-      xyt->thetacol[i] = c[i].col[2];
-    }
+  for (i = 0; i < nmin; i++) {
+    xyt->xcol[i] = c[i].col[0];
+    xyt->ycol[i] = c[i].col[1];
+    xyt->thetacol[i] = c[i].col[2];
+  }
   xyt->nrows = nmin;
 }
 
@@ -152,42 +143,36 @@ minutiae_to_xyt (struct fp_minutiae *minutiae,
  *
  * Returns: %TRUE on success
  */
-gboolean
-fpi_print_add_from_image (FpPrint *print,
-                          FpImage *image,
-                          GError **error)
-{
+gboolean fpi_print_add_from_image(FpPrint *print, FpImage *image,
+                                  GError **error) {
   GPtrArray *minutiae;
   struct fp_minutiae _minutiae;
   struct xyt_struct *xyt;
 
   if ((print->type != FPI_PRINT_NBIS && print->type != FPI_PRINT_SIGFM) ||
       !image) {
-      g_set_error (error,
-                   G_IO_ERROR,
-                   G_IO_ERROR_INVALID_DATA,
-                   "Cannot add print data from image!");
-      return FALSE;
+    g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA,
+                "Cannot add print data from image!");
+    return FALSE;
   }
   if (print->type == FPI_PRINT_NBIS) {
-      minutiae = fp_image_get_minutiae(image);
-      if (!minutiae || minutiae->len == 0) {
-          g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA,
-                      "No minutiae found in image or not yet detected!");
-          return FALSE;
-      }
+    minutiae = fp_image_get_minutiae(image);
+    if (!minutiae || minutiae->len == 0) {
+      g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA,
+                  "No minutiae found in image or not yet detected!");
+      return FALSE;
+    }
 
-      _minutiae.num = minutiae->len;
-      _minutiae.list = (struct fp_minutia**) minutiae->pdata;
-      _minutiae.alloc = minutiae->len;
+    _minutiae.num = minutiae->len;
+    _minutiae.list = (struct fp_minutia **)minutiae->pdata;
+    _minutiae.alloc = minutiae->len;
 
-      xyt = g_new0(struct xyt_struct, 1);
-      minutiae_to_xyt(&_minutiae, image->width, image->height, xyt);
-      g_ptr_array_add(print->prints, xyt);
-  }
-  else if (print->type == FPI_PRINT_SIGFM) {
-      SfmImgInfo* info = fp_image_get_sfm_info(image);
-      g_ptr_array_add(print->prints, info);
+    xyt = g_new0(struct xyt_struct, 1);
+    minutiae_to_xyt(&_minutiae, image->width, image->height, xyt);
+    g_ptr_array_add(print->prints, xyt);
+  } else if (print->type == FPI_PRINT_SIGFM) {
+    SfmImgInfo *info = fp_image_get_sfm_info(image);
+    g_ptr_array_add(print->prints, info);
   }
 
   g_clear_object(&print->image);
@@ -210,66 +195,64 @@ fpi_print_add_from_image (FpPrint *print,
  * Both @template and @print need to be of type #FPI_PRINT_NBIS for this to
  * work.
  *
- * Returns: Whether the prints match, @error will be set if #FPI_MATCH_ERROR is returned
+ * Returns: Whether the prints match, @error will be set if #FPI_MATCH_ERROR is
+ * returned
  */
-FpiMatchResult
-fpi_print_bz3_match (FpPrint *template, FpPrint *print, gint bz3_threshold, GError **error)
-{
+FpiMatchResult fpi_print_bz3_match(FpPrint *template, FpPrint *print,
+                                   gint bz3_threshold, GError **error) {
   struct xyt_struct *pstruct;
   gint probe_len;
   gint i;
 
   /* XXX: Use a different error type? */
   if (template->type != FPI_PRINT_NBIS) {
-      *error = fpi_device_error_new_msg (FP_DEVICE_ERROR_NOT_SUPPORTED,
-                                         "It is only possible to match NBIS type print data");
-      return FPI_MATCH_ERROR;
+    *error = fpi_device_error_new_msg(
+        FP_DEVICE_ERROR_NOT_SUPPORTED,
+        "It is only possible to match NBIS type print data");
+    return FPI_MATCH_ERROR;
   }
 
-  if (print->prints->len != 1)
-    {
-      *error = fpi_device_error_new_msg (FP_DEVICE_ERROR_GENERAL,
-                                         "New print contains more than one print!");
-      return FPI_MATCH_ERROR;
-    }
+  if (print->prints->len != 1) {
+    *error = fpi_device_error_new_msg(
+        FP_DEVICE_ERROR_GENERAL, "New print contains more than one print!");
+    return FPI_MATCH_ERROR;
+  }
 
-  pstruct = g_ptr_array_index (print->prints, 0);
-  probe_len = bozorth_probe_init (pstruct);
+  pstruct = g_ptr_array_index(print->prints, 0);
+  probe_len = bozorth_probe_init(pstruct);
 
-  for (i = 0; i < template->prints->len; i++)
-    {
-      struct xyt_struct *gstruct;
-      gint score;
-      gstruct = g_ptr_array_index (template->prints, i);
-      score = bozorth_to_gallery (probe_len, pstruct, gstruct);
-      fp_dbg ("score %d/%d", score, bz3_threshold);
+  for (i = 0; i < template->prints->len; i++) {
+    struct xyt_struct *gstruct;
+    gint score;
+    gstruct = g_ptr_array_index(template->prints, i);
+    score = bozorth_to_gallery(probe_len, pstruct, gstruct);
+    fp_dbg("score %d/%d", score, bz3_threshold);
 
-      if (score >= bz3_threshold)
-        return FPI_MATCH_SUCCESS;
-    }
+    if (score >= bz3_threshold)
+      return FPI_MATCH_SUCCESS;
+  }
 
   return FPI_MATCH_FAIL;
 }
 
-FpiMatchResult fpi_print_sfm_match(FpPrint* template, FpPrint* print,
-                                   gint bz3_threshold, GError** error)
-{
-    if (template->type != FPI_PRINT_SIGFM) {
-        *error = fpi_device_error_new_msg(
-            FP_DEVICE_ERROR_NOT_SUPPORTED,
-            "Cannot call sfm match with non-sfm print data");
-        return FPI_MATCH_ERROR;
+FpiMatchResult fpi_print_sfm_match(FpPrint *template, FpPrint *print,
+                                   gint bz3_threshold, GError **error) {
+  if (template->type != FPI_PRINT_SIGFM) {
+    *error = fpi_device_error_new_msg(
+        FP_DEVICE_ERROR_NOT_SUPPORTED,
+        "Cannot call sfm match with non-sfm print data");
+    return FPI_MATCH_ERROR;
+  }
+  SfmImgInfo *against = g_ptr_array_index(print->prints, 0);
+  for (int i = 0; i != template->prints->len; ++i) {
+    SfmImgInfo *pinfo = g_ptr_array_index(template->prints, i);
+    int score = sfm_match_score(pinfo, against);
+    fp_dbg("sfm score %d/%d", score, bz3_threshold);
+    if (score >= bz3_threshold) {
+      return FPI_MATCH_SUCCESS;
     }
-    SfmImgInfo* against = g_ptr_array_index(print->prints, 0);
-    for (int i = 0; i != template->prints->len; ++i) {
-        SfmImgInfo* pinfo = g_ptr_array_index(template->prints, i);
-        int score = sfm_match_score(pinfo, against);
-        fp_dbg("sfm score %d/%d", score, bz3_threshold);
-        if (score >= bz3_threshold) {
-            return FPI_MATCH_SUCCESS;
-        }
-    }
-    return FPI_MATCH_FAIL;
+  }
+  return FPI_MATCH_FAIL;
 }
 
 /**
@@ -293,41 +276,34 @@ FpiMatchResult fpi_print_sfm_match(FpPrint* template, FpPrint* print,
  *
  * Returns: A unique string of 23 + strlen(username) characters
  */
-gchar *
-fpi_print_generate_user_id (FpPrint *print)
-{
+gchar *fpi_print_generate_user_id(FpPrint *print) {
   const gchar *username = NULL;
   gchar *user_id = NULL;
   const GDate *date;
   gint y = 0, m = 0, d = 0;
   gint32 rand_id = 0;
 
-  g_assert (print);
-  date = fp_print_get_enroll_date (print);
-  if (date && g_date_valid (date))
-    {
-      y = g_date_get_year (date);
-      m = g_date_get_month (date);
-      d = g_date_get_day (date);
-    }
+  g_assert(print);
+  date = fp_print_get_enroll_date(print);
+  if (date && g_date_valid(date)) {
+    y = g_date_get_year(date);
+    m = g_date_get_month(date);
+    d = g_date_get_day(date);
+  }
 
-  username = fp_print_get_username (print);
+  username = fp_print_get_username(print);
   if (!username)
     username = "nobody";
 
-  if (g_strcmp0 (g_getenv ("FP_DEVICE_EMULATION"), "1") == 0)
+  if (g_strcmp0(g_getenv("FP_DEVICE_EMULATION"), "1") == 0)
     rand_id = 0;
   else
-    rand_id = g_random_int ();
+    rand_id = g_random_int();
 
-  user_id = g_strdup_printf ("FP1-%04d%02d%02d-%X-%08X-%s",
-                             y, m, d,
-                             fp_print_get_finger (print),
-                             rand_id,
-                             username);
+  user_id = g_strdup_printf("FP1-%04d%02d%02d-%X-%08X-%s", y, m, d,
+                            fp_print_get_finger(print), rand_id, username);
 
   return user_id;
-
 }
 
 /**
@@ -340,46 +316,42 @@ fpi_print_generate_user_id (FpPrint *print)
  *
  * Returns: Whether a valid ID was found
  */
-gboolean
-fpi_print_fill_from_user_id (FpPrint *print, const char *user_id)
-{
-  g_return_val_if_fail (user_id, FALSE);
+gboolean fpi_print_fill_from_user_id(FpPrint *print, const char *user_id) {
+  g_return_val_if_fail(user_id, FALSE);
 
   /* The format has 24 bytes at the start and some dashes in the right places */
-  if (g_str_has_prefix (user_id, "FP1-") && strlen (user_id) >= 24 &&
-      user_id[12] == '-' && user_id[14] == '-' && user_id[23] == '-')
-    {
-      g_autofree gchar *copy = g_strdup (user_id);
-      g_autoptr(GDate) date = NULL;
-      gint32 date_ymd;
-      gint32 finger;
-      gchar *username;
-      /* Try to parse information from the string. */
+  if (g_str_has_prefix(user_id, "FP1-") && strlen(user_id) >= 24 &&
+      user_id[12] == '-' && user_id[14] == '-' && user_id[23] == '-') {
+    g_autofree gchar *copy = g_strdup(user_id);
+    g_autoptr(GDate) date = NULL;
+    gint32 date_ymd;
+    gint32 finger;
+    gchar *username;
+    /* Try to parse information from the string. */
 
-      copy[12] = '\0';
-      date_ymd = g_ascii_strtod (copy + 4, NULL);
-      if (date_ymd > 0)
-        date = g_date_new_dmy (date_ymd % 100,
-                               (date_ymd / 100) % 100,
-                               date_ymd / 10000);
-      else
-        date = g_date_new ();
+    copy[12] = '\0';
+    date_ymd = g_ascii_strtod(copy + 4, NULL);
+    if (date_ymd > 0)
+      date = g_date_new_dmy(date_ymd % 100, (date_ymd / 100) % 100,
+                            date_ymd / 10000);
+    else
+      date = g_date_new();
 
-      fp_print_set_enroll_date (print, date);
+    fp_print_set_enroll_date(print, date);
 
-      copy[14] = '\0';
-      finger = g_ascii_strtoll (copy + 13, NULL, 16);
-      fp_print_set_finger (print, finger);
+    copy[14] = '\0';
+    finger = g_ascii_strtoll(copy + 13, NULL, 16);
+    fp_print_set_finger(print, finger);
 
-      /* We ignore the next chunk, it is just random data.
-       * Then comes the username; nobody is the default if the metadata
-       * is unknown */
-      username = copy + 24;
-      if (strlen (username) > 0 && g_strcmp0 (username, "nobody") != 0)
-        fp_print_set_username (print, username);
+    /* We ignore the next chunk, it is just random data.
+     * Then comes the username; nobody is the default if the metadata
+     * is unknown */
+    username = copy + 24;
+    if (strlen(username) > 0 && g_strcmp0(username, "nobody") != 0)
+      fp_print_set_username(print, username);
 
-      return TRUE;
-    }
+    return TRUE;
+  }
 
   return FALSE;
 }
