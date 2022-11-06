@@ -5,27 +5,20 @@
       "type": "shell",
       "label": "Configure the project",
       "command": "/usr/bin/meson",
-      "args": [
-        "${workspaceFolder}/_build"
-      ],
+      "args": ["${workspaceFolder}/_build"],
       "problemMatcher": []
     },
     {
       "type": "shell",
       "label": "Build the project",
       "command": "/usr/bin/meson",
-      "args": [
-        "compile"
-      ],
+      "args": ["compile"],
       "options": {
         "cwd": "${workspaceFolder}/_build"
       },
       "problemMatcher": {
         "base": "$gcc",
-        "fileLocation": [
-          "relative",
-          "${workspaceFolder}/_build"
-        ]
+        "fileLocation": ["relative", "${workspaceFolder}/_build"]
       },
       "group": {
         "kind": "build",

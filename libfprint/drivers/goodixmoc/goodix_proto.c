@@ -393,8 +393,10 @@ gx_proto_parse_body (uint16_t cmd, uint8_t *buffer, uint16_t buffer_len, pgxfp_c
                                        fingerid_length,
                                        &presp->finger_list_resp.finger_list[num]) != 0)
             {
-              g_warning ("Failed to parse finger list");
-              return -1;
+              g_error ("parse fingerlist error");
+              presp->finger_list_resp.finger_num = 0;
+              presp->result = GX_FAILED;
+              break;
             }
           offset += fingerid_length;
         }
