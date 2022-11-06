@@ -774,6 +774,7 @@ fpi_device_goodixtls511_class_init(FpiDeviceGoodixTls511Class* class)
     img_dev_class->bz3_threshold = 24;
     img_dev_class->img_width = GOODIX511_WIDTH;
     img_dev_class->img_height = GOODIX511_HEIGHT;
+    img_dev_class->algorithm = FPI_DEVICE_ALGO_SIGFM;
 
     img_dev_class->img_open = dev_init;
     img_dev_class->img_close = dev_deinit;
