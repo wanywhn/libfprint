@@ -248,6 +248,11 @@ void goodix_send_mcu_switch_to_idle_mode (FpDevice          *dev,
                                           GoodixNoneCallback callback,
                                           gpointer           user_data);
 
+void goodix_send_mcu_switch_to_sleep_mode (FpDevice          *dev,
+                                          guint8             sleep_time,
+                                          GoodixNoneCallback callback,
+                                          gpointer           user_data);
+
 void goodix_send_write_sensor_register (FpDevice          *dev,
                                         guint16            address,
                                         guint16            value,

@@ -852,6 +852,32 @@ goodix_send_mcu_switch_to_idle_mode (FpDevice *dev, guint8 sleep_time,
 }
 
 void
+goodix_send_mcu_switch_to_sleep_mode (FpDevice *dev, guint8 sleep_time,
+                                     GoodixNoneCallback callback,
+                                     gpointer user_data)
+{
+  GoodixMcuSwitchToIdleMode payload = {.sleep_time = sleep_time};
+  GoodixCallbackInfo *cb_info;
+
+  if (callback)
+    {
+      cb_info = malloc (sizeof (GoodixCallbackInfo));
+
+      cb_info->callback = G_CALLBACK (callback);
+      cb_info->user_data = user_data;
+
+      goodix_send_protocol (dev, GOODIX_CMD_MCU_SWITCH_TO_SLEEP_MODE,
+                            (guint8 *) &payload, sizeof (payload), NULL, TRUE,
+                            GOODIX_TIMEOUT, FALSE, goodix_receive_none, cb_info);
+      return;
+    }
+
+  goodix_send_protocol (dev, GOODIX_CMD_MCU_SWITCH_TO_SLEEP_MODE,
+                        (guint8 *) &payload, sizeof (payload), NULL, TRUE,
+                        GOODIX_TIMEOUT, FALSE, NULL, NULL);
+}
+
+void
 goodix_send_write_sensor_register (FpDevice *dev, guint16 address,
                                    guint16 value,
                                    GoodixNoneCallback callback,

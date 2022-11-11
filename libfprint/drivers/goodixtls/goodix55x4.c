@@ -80,6 +80,7 @@ enum activate_states {
     ACTIVATE_CHECK_FW_VER,
     ACTIVATE_CHECK_PSK,
     ACTIVATE_RESET,
+    ACTIVATE_SET_MCU_IDLE,
     ACTIVATE_SET_MCU_CONFIG,
     ACTIVATE_NUM_STATES,
 };
@@ -278,10 +279,10 @@ static void activate_run_state(FpiSsm* ssm, FpDevice* dev)
       goodix_send_reset(dev, TRUE, 20, check_reset, ssm);
       break;
 
-    // case ACTIVATE_SET_MCU_IDLE:
-    //     g_print("Device IDLE\n");
-    //     goodix_send_mcu_switch_to_idle_mode(dev, 20, check_idle, ssm);
-    //     break;
+    case ACTIVATE_SET_MCU_IDLE:
+        g_print("Device IDLE\n");
+        goodix_send_mcu_switch_to_idle_mode(dev, 20, check_idle, ssm);
+        break;
 
     // case ACTIVATE_SET_ODP:
     //     goodix_send_read_otp(dev, read_otp_callback, ssm);
@@ -342,6 +343,7 @@ enum SCAN_STAGES {
     SCAN_STAGE_SWITCH_TO_FDT_MODE2,
     SCAN_STAGE_SWITCH_TO_FDT_UP_NO_REPLY,
     SCAN_STAGE_SWITCH_TO_FDT_UP,
+    SCAN_STAGE_SWITCH_TO_SLEEP_MODE,
     SCAN_STAGE_SWITCH_TO_FDT_DONE,
     SCAN_STAGE_NUM,
 };
@@ -736,6 +738,11 @@ static void scan_run_state(FpiSsm* ssm, FpDevice* dev)
         goodix_send_mcu_switch_to_fdt_up(dev, (guint8*) fdt_switch_state_up_55X4,
                                            sizeof(fdt_switch_state_up_55X4), NULL,
                                            check_none_cmd, ssm);
+        break;
+    case SCAN_STAGE_SWITCH_TO_SLEEP_MODE:
+        g_print("SWITCH TO SLEEP MODE\n");
+        goodix_send_mcu_switch_to_sleep_mode(dev, 20, check_idle, ssm);
+
         break;
     case SCAN_STAGE_SWITCH_TO_FDT_DONE:
         fpi_image_device_report_finger_status(img_dev, FALSE);
