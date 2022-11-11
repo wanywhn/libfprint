@@ -740,13 +740,13 @@ goodix_send_mcu_switch_to_fdt_up (FpDevice *dev, guint8 *mode,
       cb_info->user_data = user_data;
 
       goodix_send_protocol (dev, GOODIX_CMD_MCU_SWITCH_TO_FDT_UP, mode, length,
-                            free_func, TRUE, GOODIX_TIMEOUT, TRUE, goodix_receive_default,
+                            free_func, TRUE, 0, TRUE, goodix_receive_default,
                             cb_info);
       return;
     }
 
   goodix_send_protocol (dev, GOODIX_CMD_MCU_SWITCH_TO_FDT_UP, mode, length,
-                        free_func, TRUE, GOODIX_TIMEOUT, TRUE, NULL, NULL);
+                        free_func, TRUE, 0, TRUE, NULL, NULL);
 }
 
 void
@@ -765,13 +765,13 @@ goodix_send_mcu_switch_to_fdt_up_no_reply (FpDevice *dev, guint8 *mode,
       cb_info->user_data = user_data;
 
       goodix_send_protocol (dev, GOODIX_CMD_MCU_SWITCH_TO_FDT_UP, mode, length,
-                            free_func, TRUE, GOODIX_TIMEOUT, FALSE, goodix_receive_default,
+                            free_func, TRUE, 0, FALSE, goodix_receive_default,
                             cb_info);
       return;
     }
 
   goodix_send_protocol (dev, GOODIX_CMD_MCU_SWITCH_TO_FDT_UP, mode, length,
-                        free_func, TRUE, GOODIX_TIMEOUT, FALSE, NULL, NULL);
+                        free_func, TRUE, 0, FALSE, NULL, NULL);
 }
 
 void
@@ -791,13 +791,13 @@ goodix_send_mcu_switch_to_fdt_mode (FpDevice *dev, guint8 *mode,
       cb_info->user_data = user_data;
 
       goodix_send_protocol (dev, GOODIX_CMD_MCU_SWITCH_TO_FDT_MODE, mode, length,
-                            free_func, TRUE, GOODIX_TIMEOUT, TRUE, goodix_receive_default,
+                            free_func, TRUE, 0, TRUE, goodix_receive_default,
                             cb_info);
       return;
     }
 
   goodix_send_protocol (dev, GOODIX_CMD_MCU_SWITCH_TO_FDT_MODE, mode, length,
-                        free_func, TRUE, GOODIX_TIMEOUT, TRUE, NULL, NULL);
+                        free_func, TRUE, 0, TRUE, NULL, NULL);
 }
 
 void
