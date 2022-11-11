@@ -672,31 +672,6 @@ void goodix_send_mcu_get_pov_image(FpDevice *dev, GoodixSuccessCallback callback
                        GOODIX_TIMEOUT, FALSE, NULL, NULL);
 }
 
-void goodix_send_mcu_get_image(FpDevice* dev, GoodixImageCallback callback,
-                               gpointer user_data)
-{
-    guint8 payload[] = {0x01, 0x00};
-    /*guint8 payload[] = {0x45, 0x03, 0xa7, 0x00, 0xa1, 0x00, 0xa7, 0x00, 0xa3, 0x00};*/
-    //guint8 payload[] = {0x81, 0x03, 0x27, 0x01, 0x21, 0x01, 0x27, 0x01, 0x23, 0x01};
-    //guint8 payload[] = {0x43, 0x03, 0xa7, 0x00, 0xa1, 0x00, 0xa7, 0x00, 0xa3, 0x00};
-    GoodixCallbackInfo* cb_info;
-
-    if (callback) {
-        cb_info = malloc(sizeof(GoodixCallbackInfo));
-
-        cb_info->callback = G_CALLBACK(callback);
-        cb_info->user_data = user_data;
-
-        goodix_send_protocol(dev, GOODIX_CMD_MCU_GET_IMAGE, (guint8*) &payload,
-                             sizeof(payload), NULL, TRUE, GOODIX_TIMEOUT, TRUE,
-                             goodix_receive_default, cb_info);
-        return;
-    }
-
-  goodix_send_protocol (dev, GOODIX_CMD_NOP, (guint8 *) &payload, sizeof (payload),
-                        NULL, FALSE, GOODIX_TIMEOUT, FALSE, NULL, NULL);
-  goodix_receive_done (dev, NULL, 0, NULL);
-}
 
 void
 goodix_send_mcu_get_image (FpDevice *dev, GoodixImageCallback callback,
@@ -765,13 +740,38 @@ goodix_send_mcu_switch_to_fdt_up (FpDevice *dev, guint8 *mode,
       cb_info->user_data = user_data;
 
       goodix_send_protocol (dev, GOODIX_CMD_MCU_SWITCH_TO_FDT_UP, mode, length,
-                            free_func, TRUE, 0, TRUE, goodix_receive_default,
+                            free_func, TRUE, GOODIX_TIMEOUT, TRUE, goodix_receive_default,
                             cb_info);
       return;
     }
 
   goodix_send_protocol (dev, GOODIX_CMD_MCU_SWITCH_TO_FDT_UP, mode, length,
-                        free_func, TRUE, 0, TRUE, NULL, NULL);
+                        free_func, TRUE, GOODIX_TIMEOUT, TRUE, NULL, NULL);
+}
+
+void
+goodix_send_mcu_switch_to_fdt_up_no_reply (FpDevice *dev, guint8 *mode,
+                                  guint16 length, GDestroyNotify free_func,
+                                  GoodixDefaultCallback callback,
+                                  gpointer user_data)
+{
+  GoodixCallbackInfo *cb_info;
+
+  if (callback)
+    {
+      cb_info = malloc (sizeof (GoodixCallbackInfo));
+
+      cb_info->callback = G_CALLBACK (callback);
+      cb_info->user_data = user_data;
+
+      goodix_send_protocol (dev, GOODIX_CMD_MCU_SWITCH_TO_FDT_UP, mode, length,
+                            free_func, TRUE, GOODIX_TIMEOUT, FALSE, goodix_receive_default,
+                            cb_info);
+      return;
+    }
+
+  goodix_send_protocol (dev, GOODIX_CMD_MCU_SWITCH_TO_FDT_UP, mode, length,
+                        free_func, TRUE, GOODIX_TIMEOUT, FALSE, NULL, NULL);
 }
 
 void
@@ -791,13 +791,13 @@ goodix_send_mcu_switch_to_fdt_mode (FpDevice *dev, guint8 *mode,
       cb_info->user_data = user_data;
 
       goodix_send_protocol (dev, GOODIX_CMD_MCU_SWITCH_TO_FDT_MODE, mode, length,
-                            free_func, TRUE, 0, TRUE, goodix_receive_default,
+                            free_func, TRUE, GOODIX_TIMEOUT, TRUE, goodix_receive_default,
                             cb_info);
       return;
     }
 
   goodix_send_protocol (dev, GOODIX_CMD_MCU_SWITCH_TO_FDT_MODE, mode, length,
-                        free_func, TRUE, 0, TRUE, NULL, NULL);
+                        free_func, TRUE, GOODIX_TIMEOUT, TRUE, NULL, NULL);
 }
 
 void
@@ -1539,18 +1539,6 @@ goodix_tls_ready_image_handler (FpDevice *dev, guint8 *data,
     FpiDeviceGoodixTlsPrivate* priv =
         fpi_device_goodixtls_get_instance_private(self);
     goodix_tls_client_send(priv->tls_hop, data, length);
-
-  if (error)
-    {
-      callback (dev, NULL, 0, cb_info->user_data, error);
-      g_free (cb_info);
-      return;
-    }
-  FpiDeviceGoodixTls *self = FPI_DEVICE_GOODIXTLS (dev);
-  FpiDeviceGoodixTlsPrivate *priv =
-    fpi_device_goodixtls_get_instance_private (self);
-
-  goodix_tls_client_send (priv->tls_hop, data, length);
 
   const guint16 size = -1;
   guint8 *buff = malloc (size);

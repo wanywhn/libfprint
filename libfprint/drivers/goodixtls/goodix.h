@@ -225,6 +225,13 @@ void goodix_send_mcu_switch_to_fdt_up (FpDevice             *dev,
                                        GoodixDefaultCallback callback,
                                        gpointer              user_data);
 
+void goodix_send_mcu_switch_to_fdt_up_no_reply (FpDevice             *dev,
+                                                guint8               *mode,
+                                                guint16               length,
+                                                GDestroyNotify        free_func,
+                                                GoodixDefaultCallback callback,
+                                                gpointer              user_data);
+
 void goodix_send_mcu_switch_to_fdt_mode (FpDevice             *dev,
                                          guint8               *mode,
                                          guint16               length,

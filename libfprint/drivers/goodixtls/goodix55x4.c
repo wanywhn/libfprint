@@ -51,7 +51,7 @@
 // extra end
 #define GOODIX55X4_RAW_FRAME_SIZE                                               \
     (GOODIX55X4_HEIGHT * GOODIX55X4_SCAN_WIDTH) / 4 * 6
-#define GOODIX55X4_CAP_FRAMES 7 // Number of frames we capture per swipe
+#define GOODIX55X4_CAP_FRAMES 1 // Number of frames we capture per swipe
 
 typedef unsigned short Goodix55X4Pix;
 
@@ -335,10 +335,14 @@ static void activate_complete(FpiSsm* ssm, FpDevice* dev, GError* error)
 // ---- SCAN SECTION START ----
 
 enum SCAN_STAGES {
+    SCAN_STAGE_CALIBRATE,
     SCAN_STAGE_SWITCH_TO_FDT_MODE,
     SCAN_STAGE_SWITCH_TO_FDT_DOWN,
     SCAN_STAGE_GET_IMG,
-
+    SCAN_STAGE_SWITCH_TO_FDT_MODE2,
+    SCAN_STAGE_SWITCH_TO_FDT_UP_NO_REPLY,
+    SCAN_STAGE_SWITCH_TO_FDT_UP,
+    SCAN_STAGE_SWITCH_TO_FDT_DONE,
     SCAN_STAGE_NUM,
 };
 
@@ -368,7 +372,6 @@ static void decode_frame(Goodix55X4Pix frame[GOODIX55X4_FRAME_SIZE],
                          const guint8* raw_frame)
 {
 
-    save_image_to_pgm2(raw_frame, "finger3_before.pgm");
     Goodix55X4Pix uncropped[GOODIX55X4_SCAN_WIDTH * GOODIX55X4_HEIGHT];
     Goodix55X4Pix* pix = uncropped;
     for (int i = 0; i < GOODIX55X4_RAW_FRAME_SIZE; i += 6) {
@@ -378,7 +381,6 @@ static void decode_frame(Goodix55X4Pix frame[GOODIX55X4_FRAME_SIZE],
         *pix++ = ((chunk[5] & 0xf) << 8) + chunk[2];
         *pix++ = (chunk[4] << 4) + (chunk[5] >> 4);
     }
-    save_image_to_pgm2(uncropped, "finger3.pgm");
 
     for (int y = 0; y != GOODIX55X4_HEIGHT; ++y) {
         for (int x = 0; x != GOODIX55X4_WIDTH; ++x) {
@@ -458,13 +460,12 @@ static gboolean postprocess_frame(Goodix55X4Pix frame[GOODIX55X4_FRAME_SIZE],
         Goodix55X4Pix* og_px = frame + i;
         Goodix55X4Pix bg_px =  background[i];
             if (bg_px > *og_px) {
-                *og_px = 0;
+                *og_px = bg_px - *og_px;
             }
             else {
                 *og_px -= bg_px;
             }
-            *og_px = MAX(bg_px - *og_px, 0);
-            *og_px = MAX(*og_px - bg_px, 0);
+
             sum += *og_px;
             
     }
@@ -485,7 +486,7 @@ static void process_frame(Goodix55X4Pix* raw_frame, frame_processing_info* info)
 {
     struct fpi_frame* frame =
         g_malloc(GOODIX55X4_FRAME_SIZE + sizeof(struct fpi_frame));
-    //postprocess_frame(raw_frame, info->dev->empty_img);
+    postprocess_frame(raw_frame, info->dev->empty_img);
     squash_frame_linear(raw_frame, frame->data);
 
     *(info->frames) = g_slist_append(*(info->frames), frame);
@@ -509,7 +510,6 @@ static void scan_on_read_img(FpDevice* dev, guint8* data, guint16 len,
 
 
     FpiDeviceGoodixTls55X4* self = FPI_DEVICE_GOODIXTLS55X4(dev);
-    save_image_to_pgm2(data, "finger2.pgm"); /// VERIFIED WORKING HERE 100% NOT HARDCODED LOL
     save_frame(self, data);
     if (g_slist_length(self->frames) <= GOODIX55X4_CAP_FRAMES) {
         fpi_ssm_jump_to_state(ssm, SCAN_STAGE_SWITCH_TO_FDT_MODE);
@@ -541,11 +541,7 @@ static void scan_on_read_img(FpDevice* dev, guint8* data, guint16 len,
 
         g_print("Signal IMG Capture\n");
         fpi_image_device_image_captured(img_dev, img);
-        save_image_to_pgm(img, "finger.pgm");
-
-
-        g_print("Notify of finger removal\n");
-        fpi_image_device_report_finger_status(img_dev, FALSE);
+        // save_image_to_pgm(img, "finger.pgm");
 
         g_print("Next State\n");
         fpi_ssm_next_state(ssm);
@@ -621,7 +617,6 @@ save_image_to_pgm (FpImage *img, const char *path)
 }
 
 enum scan_empty_img_state {
-    SCAN_EMPTY_NAV0,
     SCAN_EMPTY_GET_IMG,
 
     SCAN_EMPTY_NUM,
@@ -636,15 +631,15 @@ static void on_scan_empty_img(FpDevice* dev, guint8* data, guint16 length,
     }
     FpiDeviceGoodixTls55X4* self = FPI_DEVICE_GOODIXTLS55X4(dev);
     decode_frame(self->empty_img, data);
+    // FpImage *bgk = fp_image_new(GOODIX55X4_WIDTH, GOODIX55X4_HEIGHT);
+    // squash_frame(self->empty_img, bgk->data);
+    // save_image_to_pgm(bgk, "./background.pgm");
     fpi_ssm_next_state(ssm);
 }
 static void scan_empty_run(FpiSsm* ssm, FpDevice* dev)
 {
 
     switch (fpi_ssm_get_cur_state(ssm)) {
-    case SCAN_EMPTY_NAV0:
-        goodix_send_nav_0(dev, check_none_cmd, ssm);
-        break;
 
     case SCAN_EMPTY_GET_IMG:
         goodix_tls_read_image(dev, on_scan_empty_img, ssm);
@@ -669,6 +664,13 @@ const guint8 fdt_switch_state_mode_55X4[] = {
     0xa7, 0x80, 0x98, 0x80, 0x84
 };
 
+const guint8 fdt_switch_state_mode2_55X4[] = {
+    0x0d, 0x01, 0x80, 0xb3, 0x80, 0xc6, 0x80,
+    0xbc, 0x80, 0xa8, 0x80, 0xb9, 0x80, 0xca,
+    0x80, 0xc2, 0x80, 0xab, 0x80, 0xb7, 0x80,
+    0xc6, 0x80, 0xbc, 0x80, 0xa6
+};
+
 
 const guint8 fdt_switch_state_down_55X4[] = {
     0x0c, 0x01, 0x80, 0xb1, 0x80, 0xc6, 0x80,
@@ -677,12 +679,23 @@ const guint8 fdt_switch_state_down_55X4[] = {
     0xc7, 0x80, 0xbc, 0x80, 0xa7
 };
 
+const guint8 fdt_switch_state_up_55X4[] = {
+    0x0e, 0x01, 0x80, 0x92, 0x80, 0x9d, 0x80,
+    0x93, 0x80, 0x92, 0x80, 0x97, 0x80, 0x9e,
+    0x80, 0xa0, 0x80, 0x8e, 0x80, 0xab, 0x80,
+    0xa5, 0x80, 0xb0, 0x80, 0x12
+};
+
+
+
 static void scan_run_state(FpiSsm* ssm, FpDevice* dev)
 {
     FpImageDevice* img_dev = FP_IMAGE_DEVICE(dev);
 
     switch (fpi_ssm_get_cur_state(ssm)) {
-
+    case SCAN_STAGE_CALIBRATE:
+        scan_empty_img(dev, ssm);
+        break;
     case SCAN_STAGE_SWITCH_TO_FDT_MODE:
         g_print("SWITCH TO FDT MODE\n");
         goodix_send_mcu_switch_to_fdt_mode(dev, (guint8*) fdt_switch_state_mode_55X4,
@@ -691,7 +704,7 @@ static void scan_run_state(FpiSsm* ssm, FpDevice* dev)
         break;
 
     case SCAN_STAGE_SWITCH_TO_FDT_DOWN:
-        g_print("SWITCH TO FDT DOWWWWNNNN\n");
+        g_print("SWITCH TO FDT DOWN\n");
         goodix_send_mcu_switch_to_fdt_down(dev, (guint8*) fdt_switch_state_down_55X4,
                                            sizeof(fdt_switch_state_down_55X4), NULL,
                                            check_none_cmd, ssm);
@@ -701,10 +714,31 @@ static void scan_run_state(FpiSsm* ssm, FpDevice* dev)
         fpi_image_device_report_finger_status(img_dev, TRUE);
         // Set Sensotr Register first to get valid output
         // device.write_sensor_register(0x022c, b"\x05\x03")
-        guint8 payload[] = {0x01, 0x00};
+        // guint8 payload[] = {0x01, 0x00};
         //goodix_send_mcu_get_image(dev, check_none_cmd, ssm);
         //goodix_send_write_sensor_register(dev, 0x022c, payload, write_sensor_complete, ssm);
         scan_get_img(dev, ssm);
+        break;
+    case SCAN_STAGE_SWITCH_TO_FDT_MODE2:
+        g_print("SWITCH TO FDT MODE 2\n");
+        goodix_send_mcu_switch_to_fdt_mode(dev, (guint8*) fdt_switch_state_mode2_55X4,
+                                           sizeof(fdt_switch_state_mode2_55X4), NULL,
+                                           check_none_cmd, ssm);
+        break;
+    case SCAN_STAGE_SWITCH_TO_FDT_UP_NO_REPLY:
+        g_print("SWITCH TO FDT UP NO REPLY\n");
+        goodix_send_mcu_switch_to_fdt_up_no_reply(dev, (guint8*) fdt_switch_state_up_55X4,
+                                           sizeof(fdt_switch_state_up_55X4), NULL,
+                                           check_none_cmd, ssm);
+        break;
+    case SCAN_STAGE_SWITCH_TO_FDT_UP:
+        g_print("SWITCH TO FDT UP\n");
+        goodix_send_mcu_switch_to_fdt_up(dev, (guint8*) fdt_switch_state_up_55X4,
+                                           sizeof(fdt_switch_state_up_55X4), NULL,
+                                           check_none_cmd, ssm);
+        break;
+    case SCAN_STAGE_SWITCH_TO_FDT_DONE:
+        fpi_image_device_report_finger_status(img_dev, FALSE);
         break;
     }
 }
@@ -813,11 +847,12 @@ static void fpi_device_goodixtls55x4_class_init(
   dev_class->full_name = "Goodix TLS Fingerprint Sensor 55X4";
   dev_class->type = FP_DEVICE_TYPE_USB;
   dev_class->id_table = id_table;
-
+  dev_class->nr_enroll_stages = 10;
   dev_class->scan_type = FP_SCAN_TYPE_PRESS;
 
   // TODO
-  img_dev_class->bz3_threshold = 12*4;
+  img_dev_class->bz3_threshold = 24*2;
+  img_dev_class->algorithm = FPI_DEVICE_ALGO_SIGFM;
   img_dev_class->img_width = GOODIX55X4_WIDTH;
   img_dev_class->img_height = GOODIX55X4_HEIGHT;
 
