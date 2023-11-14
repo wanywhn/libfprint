@@ -493,7 +493,7 @@ static void scan_on_read_img(FpDevice *dev, guint8 *data, guint16 len,
     struct fpi_frame_asmbl_ctx assembly_ctx;
     assembly_ctx.frame_width = GOODIX55X4_WIDTH;
     assembly_ctx.frame_height = GOODIX55X4_HEIGHT;
-    assembly_ctx.image_width = GOODIX55X4_WIDTH * 2;
+    assembly_ctx.image_width = GOODIX55X4_WIDTH * 1;
     assembly_ctx.get_pixel = get_pix;
 
     GSList *frames = NULL;
