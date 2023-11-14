@@ -23,8 +23,8 @@
 #include "fpi-image.h"
 #include "fpi-log.h"
 
-#include <nbis.h>
 #include <config.h>
+#include <nbis.h>
 
 #ifdef HAVE_PIXMAN
 #include <pixman.h>
@@ -54,10 +54,7 @@
  *
  * Returns: the squared standard deviation for @buffer
  */
-gint
-fpi_std_sq_dev (const guint8 *buf,
-                gint          size)
-{
+gint fpi_std_sq_dev(const guint8 *buf, gint size) {
   guint64 res = 0, mean = 0;
   gint i;
 
@@ -66,11 +63,10 @@ fpi_std_sq_dev (const guint8 *buf,
 
   mean /= size;
 
-  for (i = 0; i < size; i++)
-    {
-      int dev = (int) buf[i] - mean;
-      res += dev * dev;
-    }
+  for (i = 0; i < size; i++) {
+    int dev = (int)buf[i] - mean;
+    res += dev * dev;
+  }
 
   return res / size;
 }
@@ -92,27 +88,18 @@ fpi_std_sq_dev (const guint8 *buf,
  *
  * Returns: the normalized mean squared difference between @buf1 and @buf2
  */
-gint
-fpi_mean_sq_diff_norm (const guint8 *buf1,
-                       const guint8 *buf2,
-                       gint          size)
-{
+gint fpi_mean_sq_diff_norm(const guint8 *buf1, const guint8 *buf2, gint size) {
   int res = 0, i;
 
-  for (i = 0; i < size; i++)
-    {
-      int dev = (int) buf1[i] - (int) buf2[i];
-      res += dev * dev;
-    }
+  for (i = 0; i < size; i++) {
+    int dev = (int)buf1[i] - (int)buf2[i];
+    res += dev * dev;
+  }
 
   return res / size;
 }
 
-FpImage *
-fpi_image_resize (FpImage *orig_img,
-                  guint    w_factor,
-                  guint    h_factor)
-{
+FpImage *fpi_image_resize(FpImage *orig_img, guint w_factor, guint h_factor) {
 #ifdef HAVE_PIXMAN
   int new_width = orig_img->width * w_factor;
   int new_height = orig_img->height * h_factor;
@@ -120,35 +107,37 @@ fpi_image_resize (FpImage *orig_img,
   pixman_transform_t transform;
   FpImage *newimg;
 
-  orig = pixman_image_create_bits (PIXMAN_a8, orig_img->width, orig_img->height, (uint32_t *) orig_img->data, orig_img->width);
-  resized = pixman_image_create_bits (PIXMAN_a8, new_width, new_height, NULL, new_width);
+  orig = pixman_image_create_bits(PIXMAN_a8, orig_img->width, orig_img->height,
+                                  (uint32_t *)orig_img->data, orig_img->width);
+  resized = pixman_image_create_bits(PIXMAN_a8, new_width, new_height, NULL,
+                                     new_width);
 
-  pixman_transform_init_identity (&transform);
-  pixman_transform_scale (NULL, &transform, pixman_int_to_fixed (w_factor), pixman_int_to_fixed (h_factor));
-  pixman_image_set_transform (orig, &transform);
-  pixman_image_set_filter (orig, PIXMAN_FILTER_BILINEAR, NULL, 0);
-  pixman_image_composite32 (PIXMAN_OP_SRC,
-                            orig, /* src */
-                            NULL, /* mask */
-                            resized, /* dst */
-                            0, 0, /* src x y */
-                            0, 0, /* mask x y */
-                            0, 0, /* dst x y */
-                            new_width, new_height /* width height */
-                           );
+  pixman_transform_init_identity(&transform);
+  pixman_transform_scale(NULL, &transform, pixman_int_to_fixed(w_factor),
+                         pixman_int_to_fixed(h_factor));
+  pixman_image_set_transform(orig, &transform);
+  pixman_image_set_filter(orig, PIXMAN_FILTER_BILINEAR, NULL, 0);
+  pixman_image_composite32(PIXMAN_OP_SRC, orig,  /* src */
+                           NULL,                 /* mask */
+                           resized,              /* dst */
+                           0, 0,                 /* src x y */
+                           0, 0,                 /* mask x y */
+                           0, 0,                 /* dst x y */
+                           new_width, new_height /* width height */
+  );
 
-  newimg = fp_image_new (new_width, new_height);
+  newimg = fp_image_new(new_width, new_height);
   newimg->flags = orig_img->flags;
 
-  memcpy (newimg->data, pixman_image_get_data (resized), new_width * new_height);
+  memcpy(newimg->data, pixman_image_get_data(resized), new_width * new_height);
 
-  pixman_image_unref (orig);
-  pixman_image_unref (resized);
+  pixman_image_unref(orig);
+  pixman_image_unref(resized);
 
   return newimg;
 #else
-  fp_err ("Libfprint compiled without pixman support, impossible to resize");
+  fp_err("Libfprint compiled without pixman support, impossible to resize");
 
-  return g_object_ref (orig_img);
+  return g_object_ref(orig_img);
 #endif
 }

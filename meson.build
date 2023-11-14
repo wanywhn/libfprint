@@ -105,44 +105,43 @@ virtual_drivers = [
 ]
 
 default_drivers = [
-    'upektc_img',
-    'vfs5011',
-    'vfs7552',
-    'aes3500',
-    'aes4000',
-    'aes1610',
-    'aes1660',
-    'aes2660',
-    'aes2501',
-    'aes2550',
-    'vfs101',
-    'vfs301',
-    'vfs0050',
-    'etes603',
-    'egis0570',
-    'vcom5s',
-    'synaptics',
-    'elan',
-    'elanmoc',
-    'uru4000',
-    'upektc',
-    'upeksonly',
-    'upekts',
-    'goodixmoc',
-    'nb1010',
-    'fpcmoc',
+    # 'upektc_img',
+    # 'vfs5011',
+    # 'vfs7552',
+    # 'aes3500',
+    # 'aes4000',
+    # 'aes1610',
+    # 'aes1660',
+    # 'aes2660',
+    # 'aes2501',
+    # 'aes2550',
+    # 'vfs101',
+    # 'vfs301',
+    # 'vfs0050',
+    # 'etes603',
+    # 'egis0570',
+    # 'vcom5s',
+    # 'synaptics',
+    # 'elan',
+    # 'elanmoc',
+    # 'uru4000',
+    # 'upektc',
+    # 'upeksonly',
+    # 'upekts',
+    # 'goodixmoc',
+    # 'nb1010',
+    # 'fpcmoc',
     'goodixtls511',
     'goodixtls55x4',
-    'nb1010',
 
     # SPI
-    'elanspi',
+    # 'elanspi',
 ]
 
 # FIXME: All the drivers should be fixed by adjusting the byte order.
 # See https://gitlab.freedesktop.org/libfprint/libfprint/-/issues/236
 endian_independent_drivers = virtual_drivers + [
-    'aes3500',
+    # 'aes3500',
     'synaptics',
 ]
 
@@ -223,18 +222,13 @@ foreach i : driver_helpers
 
         libfprint_conf.set10('HAVE_PIXMAN', true)
         optional_deps += imaging_dep
-<<<<<<< HEAD
     elif i == 'nss'
         nss_dep = dependency('nss', required: false)
         if not nss_dep.found()
             error('nss is required for @0@ and possibly others'.format(driver))
         endif
         optional_deps += nss_dep
-    endif
-    if driver == 'goodixtls511'
-=======
     elif i == 'goodixtls'
->>>>>>> ba878ce (Resolved merge errors)
         openssl_dep = dependency('openssl', required: false)
         if not openssl_dep.found()
             error('openssl is required for @0@ and possibly others'.format(driver))
@@ -245,14 +239,6 @@ foreach i : driver_helpers
         if not threads_dep.found()
             error('threads is required for @0@ and possibly others'.format(driver))
         endif
-<<<<<<< HEAD
-    endif
-	if udev_drivers.contains(driver)
-		gudev_dep = dependency('gudev-1.0', required: false)
-		if not gudev_dep.found()
-			error('udev is required for SPI support')
-		endif
-=======
         optional_deps += threads_dep
     elif i == 'nss'
         nss_dep = dependency('nss', required: false)
@@ -261,7 +247,6 @@ foreach i : driver_helpers
         endif
 
         optional_deps += nss_dep
->>>>>>> ba878ce (Resolved merge errors)
     elif i == 'udev'
         install_udev_rules = true
 

@@ -270,6 +270,9 @@ foreach driver: drivers
     if driver == 'goodixtls511'
     drivers_sources += ['drivers/goodixtls/goodix_proto.c', 'drivers/goodixtls/goodix.c', 'drivers/goodixtls/goodix511.c', 'drivers/goodixtls/goodixtls.c']
     endif
+    if driver == 'goodixtls55x4'
+    drivers_sources += ['drivers/goodixtls/goodix_proto.c', 'drivers/goodixtls/goodix.c', 'drivers/goodixtls/goodix55x4.c', 'drivers/goodixtls/goodixtls.c']
+    endif
 endforeach
 
 
@@ -327,10 +330,9 @@ deps = [
     gobject_dep,
     gusb_dep,
     mathlib_dep,
-    nss_dep,
     openssl_dep,
     threads_dep,
-]
+] + optional_deps
 
 subdir('sigfm')
 
