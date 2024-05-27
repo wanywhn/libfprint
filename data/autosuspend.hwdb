@@ -201,6 +201,8 @@ usb:v27c6p5110*
  ID_AUTOSUSPEND=1
 usb:v27c6p55B4*
  ID_AUTOSUSPEND=1
+usb:v27C6p5503*
+ ID_AUTOSUSPEND=1
 
 # Supported by libfprint driver nb1010
 usb:v298Dp1010*
@@ -369,7 +371,6 @@ usb:v27C6p5385*
 usb:v27C6p538C*
 usb:v27C6p538D*
 usb:v27C6p5395*
-usb:v27C6p5503*
 usb:v27C6p550A*
 usb:v27C6p550C*
 usb:v27C6p5584*
