@@ -326,6 +326,7 @@ enum SCAN_STAGES {
   SCAN_STAGE_SWITCH_TO_FDT_MODE,
   SCAN_STAGE_SWITCH_TO_FDT_DOWN,
   SCAN_STAGE_GET_IMG,
+  SCAN_STAGE_QUERY_MCU_TRUN_OFF_LIGHT,
   SCAN_STAGE_SWITCH_TO_FDT_MODE2,
   SCAN_STAGE_SWITCH_TO_FDT_UP_NO_REPLY,
   SCAN_STAGE_SWITCH_TO_FDT_UP,
@@ -643,12 +644,12 @@ const guint8 fdt_switch_state_up_55X4[] = {
 
 static void scan_run_state(FpiSsm *ssm, FpDevice *dev) {
   FpImageDevice *img_dev = FP_IMAGE_DEVICE(dev);
-
+  GoodixQueryMcuState payload;
   switch (fpi_ssm_get_cur_state(ssm)) {
   case SCAN_STAGE_QUERY_MCU:
     g_print("QUERY MCU\n");
-    GoodixQueryMcuState payload = {.unused_flags = 0x0};
-    goodix_send_query_mcu_state(dev, &payload, sizeof(payload), check_none_cmd, ssm);
+    payload.unused_flags = 0x00;
+    goodix_send_query_mcu_state(dev, (guint8 *)&payload, sizeof(payload), check_none_cmd, ssm);
     break;
   case SCAN_STAGE_CALIBRATE:
     scan_empty_img(dev, ssm);
@@ -704,6 +705,12 @@ static void scan_run_state(FpiSsm *ssm, FpDevice *dev) {
   case SCAN_STAGE_SWITCH_TO_FDT_DONE:
     fpi_image_device_report_finger_status(img_dev, FALSE);
     break;
+
+  case SCAN_STAGE_QUERY_MCU_TRUN_OFF_LIGHT:
+    payload.unused_flags = 0x01;
+    goodix_send_query_mcu_state(dev, (guint8 *)&payload, sizeof(payload), check_none_cmd, ssm);
+    break;
+	
   }
 }
 
