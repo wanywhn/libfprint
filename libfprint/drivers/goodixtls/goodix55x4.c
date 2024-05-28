@@ -641,22 +641,13 @@ const guint8 fdt_switch_state_up_55X4[] = {
 	0x80, 0x8c, 0x80, 0x88
 };
 
-static void query_mcu_state_cb(FpDevice *dev, guchar *mcu_state, guint16 len,
-                               gpointer ssm, GError *error) {
-  if (error) {
-    fpi_ssm_mark_failed(ssm, error);
-    return;
-  }
-  fpi_ssm_next_state(ssm);
-}
-
 static void scan_run_state(FpiSsm *ssm, FpDevice *dev) {
   FpImageDevice *img_dev = FP_IMAGE_DEVICE(dev);
 
   switch (fpi_ssm_get_cur_state(ssm)) {
   case SCAN_STAGE_QUERY_MCU:
     g_print("QUERY MCU\n");
-    goodix_send_query_mcu_state(dev, query_mcu_state_cb, ssm);
+    goodix_send_query_mcu_state(dev, check_none_cmd, ssm);
     break;
   case SCAN_STAGE_CALIBRATE:
     scan_empty_img(dev, ssm);
