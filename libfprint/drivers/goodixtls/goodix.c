@@ -1075,10 +1075,9 @@ goodix_send_firmware_version (FpDevice                     *dev,
 }
 
 void
-goodix_send_query_mcu_state (FpDevice *dev, GoodixDefaultCallback callback,
-                             gpointer user_data)
+goodix_send_query_mcu_state (FpDevice *dev, guint8 *payload, guint16 length,
+							 GoodixDefaultCallback callback, gpointer user_data)
 {
-  GoodixQueryMcuState payload = {.unused_flags = 0x00};
   GoodixCallbackInfo *cb_info;
 
   if (callback)
@@ -1088,8 +1087,8 @@ goodix_send_query_mcu_state (FpDevice *dev, GoodixDefaultCallback callback,
       cb_info->callback = G_CALLBACK (callback);
       cb_info->user_data = user_data;
 
-      goodix_send_protocol (dev, GOODIX_CMD_QUERY_MCU_STATE, (guint8 *) &payload,
-                            sizeof (payload), NULL, TRUE, GOODIX_TIMEOUT, TRUE,
+      goodix_send_protocol (dev, GOODIX_CMD_QUERY_MCU_STATE, (guint8 *) payload,
+                            length, NULL, TRUE, GOODIX_TIMEOUT, TRUE,
                             goodix_receive_default, cb_info);
       return;
     }

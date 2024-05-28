@@ -647,7 +647,8 @@ static void scan_run_state(FpiSsm *ssm, FpDevice *dev) {
   switch (fpi_ssm_get_cur_state(ssm)) {
   case SCAN_STAGE_QUERY_MCU:
     g_print("QUERY MCU\n");
-    goodix_send_query_mcu_state(dev, check_none_cmd, ssm);
+    GoodixQueryMcuState payload = {.unused_flags = 0x0};
+    goodix_send_query_mcu_state(dev, &payload, sizeof(payload), check_none_cmd, ssm);
     break;
   case SCAN_STAGE_CALIBRATE:
     scan_empty_img(dev, ssm);

@@ -293,6 +293,8 @@ void goodix_send_firmware_version (FpDevice                     *dev,
                                    gpointer                      user_data);
 
 void goodix_send_query_mcu_state (FpDevice             *dev,
+								  guint8 *payload,
+								  guint16 length,
                                   GoodixDefaultCallback callback,
                                   gpointer              user_data);
 

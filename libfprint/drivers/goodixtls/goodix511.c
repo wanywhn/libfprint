@@ -556,7 +556,8 @@ static void scan_run_state(FpiSsm *ssm, FpDevice *dev) {
 
   switch (fpi_ssm_get_cur_state(ssm)) {
   case SCAN_STAGE_QUERY_MCU:
-    goodix_send_query_mcu_state(dev, query_mcu_state_cb, ssm);
+	GoodixQueryMcuState payload = {.unused_flags = 0x0};
+    goodix_send_query_mcu_state(dev, &payload, sizeof(payload), query_mcu_state_cb, ssm);
     break;
 
   case SCAN_STAGE_SWITCH_TO_FDT_MODE:
