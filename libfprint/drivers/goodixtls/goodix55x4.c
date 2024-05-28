@@ -43,9 +43,9 @@
 
 #include <math.h>
 
-#define GOODIX55X4_WIDTH 80
-#define GOODIX55X4_HEIGHT 60
-#define GOODIX55X4_SCAN_WIDTH 80
+#define GOODIX55X4_WIDTH 64
+#define GOODIX55X4_HEIGHT 80
+#define GOODIX55X4_SCAN_WIDTH 64
 #define GOODIX55X4_FRAME_SIZE (GOODIX55X4_WIDTH * GOODIX55X4_HEIGHT)
 // For every 4 pixels there are 6 bytes and there are 8 extra start bytes and 5
 // extra end
@@ -320,6 +320,7 @@ static void activate_complete(FpiSsm *ssm, FpDevice *dev, GError *error) {
 // ---- SCAN SECTION START ----
 
 enum SCAN_STAGES {
+  SCAN_STAGE_QUERY_MCU,
   SCAN_STAGE_CALIBRATE,
   SCAN_STAGE_SWITCH_TO_FDT_MODE,
   SCAN_STAGE_SWITCH_TO_FDT_DOWN,
@@ -592,9 +593,9 @@ static void on_scan_empty_img(FpDevice *dev, guint8 *data, guint16 length,
   }
   FpiDeviceGoodixTls55X4 *self = FPI_DEVICE_GOODIXTLS55X4(dev);
   decode_frame(self->empty_img, data);
-  FpImage *bgk = fp_image_new(GOODIX55X4_WIDTH, GOODIX55X4_HEIGHT);
-  squash_frame(self->empty_img, bgk->data);
-  save_image_to_pgm(bgk, "./background.pgm");
+  // FpImage *bgk = fp_image_new(GOODIX55X4_WIDTH, GOODIX55X4_HEIGHT);
+  // squash_frame(self->empty_img, bgk->data);
+  // save_image_to_pgm(bgk, "./background.pgm");
   fpi_ssm_next_state(ssm);
 }
 static void scan_empty_run(FpiSsm *ssm, FpDevice *dev) {
@@ -629,7 +630,7 @@ const guint8 fdt_switch_state_mode2_55X4[] = {
 
 const guint8 fdt_switch_state_down_55X4[] = {
 	0x0c, 0x01, 0x88, 0x00, 0x82, 0x00, 0x89, 0x00, 0x86,
-	0x00, 0x80, 0xad, 0x80, 0xa3, 0x80, 0xb8, 0x80, 0xb2<
+	0x00, 0x80, 0xad, 0x80, 0xa3, 0x80, 0xb8, 0x80, 0xb2,
 	0x80, 0xaf, 0x80, 0xa3
 };
 
@@ -639,10 +640,23 @@ const guint8 fdt_switch_state_up_55X4[] = {
 	0x80, 0x8c, 0x80, 0x88
 };
 
+static void query_mcu_state_cb(FpDevice *dev, guchar *mcu_state, guint16 len,
+                               gpointer ssm, GError *error) {
+  if (error) {
+    fpi_ssm_mark_failed(ssm, error);
+    return;
+  }
+  fpi_ssm_next_state(ssm);
+}
+
 static void scan_run_state(FpiSsm *ssm, FpDevice *dev) {
   FpImageDevice *img_dev = FP_IMAGE_DEVICE(dev);
 
   switch (fpi_ssm_get_cur_state(ssm)) {
+  case SCAN_STAGE_QUERY_MCU:
+    g_print("QUERY MCU\n");
+    goodix_send_query_mcu_state(dev, query_mcu_state_cb, ssm);
+    break;
   case SCAN_STAGE_CALIBRATE:
     scan_empty_img(dev, ssm);
     break;
@@ -682,6 +696,7 @@ static void scan_run_state(FpiSsm *ssm, FpDevice *dev) {
         dev, (guint8 *)fdt_switch_state_up_55X4,
         sizeof(fdt_switch_state_up_55X4), NULL, check_none_cmd, ssm);
     break;
+
   case SCAN_STAGE_SWITCH_TO_FDT_UP:
     g_print("SWITCH TO FDT UP\n");
     goodix_send_mcu_switch_to_fdt_up(dev, (guint8 *)fdt_switch_state_up_55X4,

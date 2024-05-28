@@ -1078,7 +1078,7 @@ void
 goodix_send_query_mcu_state (FpDevice *dev, GoodixDefaultCallback callback,
                              gpointer user_data)
 {
-  GoodixQueryMcuState payload = {.unused_flags = 0x55};
+  GoodixQueryMcuState payload = {.unused_flags = 0x00};
   GoodixCallbackInfo *cb_info;
 
   if (callback)
@@ -1454,6 +1454,7 @@ tls_handshake_run (FpiSsm *ssm, FpDevice *dev)
           fpi_ssm_mark_failed (ssm, err);
           return;
         }
+  	  usleep(10000);
       fpi_ssm_next_state (ssm);
     }
 }
